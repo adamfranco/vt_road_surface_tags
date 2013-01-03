@@ -223,7 +223,8 @@ class SurfaceWayCollector(WayCollector):
 		
 		if len(candidates):
 			candidates = sorted(candidates, key=lambda k: k['bbox_difference'])
-			way['shp_surface_matches'] = ''			
+			way['shp_surface_matches'] = ''
+			way['shp_surfaces_all_unpaved'] = True
 			
 			if candidates[0]['bbox_difference'] < 8000:
 				way['shp_surfaces_match'] = True
@@ -240,8 +241,11 @@ class SurfaceWayCollector(WayCollector):
 				
 				way['shp_surface_matches'] += '<hr/><p>Route: {} <br/>\nName: {} <br/>\nSurface: {} - {} <br/>\nDifference: {}</p>\n'.format(shapeRec.record[self.route_rec], escape(shapeRec.record[self.name_rec]), shapeRec.record[self.surface_rec], self.surface_names[shapeRec.record[self.surface_rec]], candidate['bbox_difference'])
 				
-				if candidate['bbox_difference'] < cutoff and shapeRec.record[self.surface_rec] != way['shp_surface']:
-					way['shp_surfaces_match'] = False
+				if candidate['bbox_difference'] < cutoff:
+					if shapeRec.record[self.surface_rec] != way['shp_surface']:
+						way['shp_surfaces_match'] = False
+					if shapeRec.record[self.surface_rec] not in (2, 3, 5, 6):
+						way['shp_surfaces_all_unpaved'] = False
 						
 			
 			if way['shp_surfaces_match']:
@@ -307,7 +311,10 @@ class NewSurfaceKmlOutput(SurfaceKmlOutput):
 	def line_style(self, way):
 		if way['shp_surface']:
 			if not way['shp_surfaces_match']:
-				return 'mixed'
+				if way['shp_surfaces_all_unpaved']:
+					return 'unpaved'
+				else:
+					return 'mixed'
 			elif way['shp_surface'] == 1:
 				return 'paved'
 			elif way['shp_surface'] == 2:
